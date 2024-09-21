@@ -1,0 +1,81 @@
+clear
+
+cd "C:\Users\Niccolò Palminteri\Desktop"
+
+import  excel "Final Data.xlsx", sheet("Exports") firstrow case(lower) clear 
+ 
+sort    country
+ 
+encode  country, gen(countrycode)
+
+reshape long year, i(country) 
+
+rename  year exports
+
+rename _j year
+
+order   country countrycode year
+
+sort    countrycode year
+
+save    gravity_data_stata, replace
+
+clear
+
+import  excel "Final Data.xlsx", sheet("Imports") firstrow case(lower) clear 
+ 
+sort    country
+ 
+encode  country, gen(countrycode)
+
+reshape long year, i(country) 
+
+rename  year imports
+
+rename _j year
+
+order   country countrycode year
+
+sort    countrycode year
+
+merge   n:n countrycode using gravity_data_stata
+
+drop    _merge
+
+sort    countrycode year
+
+save    gravity_data_stata, replace
+
+clear
+
+import  excel "Final Data.xlsx", sheet("Distance") firstrow case(lower) clear 
+ 
+sort    country 
+ 
+encode  country, gen(countrycode)
+
+reshape long year, i(country) 
+
+rename  year distance
+
+rename _j year
+
+order   country countrycode year
+
+sort    countrycode year
+
+merge   n:n countrycode using gravity_data_stata
+
+drop    _merge
+
+gen     trade = log(imports + exports)
+
+gen     dummy_Taiwan = 1 if country == "Taiwan Province of China"
+
+replace dummy_Taiwan = 0 if mi(dummy_Taiwan)
+
+gen     dummy_Taiwan_2010 = 1 if dummy_Taiwan == 1 & year>2010
+
+replace dummy_Taiwan_2010 = 0 if mi(dummy_Taiwan_2010)
+
+reg     trade i.year dummy_Taiwan dummy_Taiwan_2010
